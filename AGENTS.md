@@ -1,5 +1,36 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Before you change anything
+
+Load the matching skill or agent **first**. Never start editing from memory of this repo —
+the conventions below are only a summary; the skill is the source of truth and it is
+verified against the current SDK.
+
+| Task | Load first |
+| --- | --- |
+| **Any** screen, route, tab, or detail page | Skill `expo-router-screen` — `agents/skills/expo-router-screen/SKILL.md` |
+| Adding or extending a feature | Agent `expo-feature` — `agents/expo-feature.md` |
+| Any HTTP call, response shape, or `src/lib/types.ts` | Agent `api-contract` — `agents/api-contract.md` |
+| Building or restyling visual components | Agent `ui` — `agents/ui.md` |
+| Reviewing React Native / React correctness | Agent `rn-reviewer` (read-only) — `agents/rn-reviewer.md` |
+| Reviewing UX and accessibility | Agent `ui-ux` (read-only) — `agents/ui-ux.md` |
+| Cannot reach the backend, or mail never arrives | Agent `debug-network` — `agents/debug-network.md` |
+| Verifying a change before calling it done | Agent `verify-changes` — `agents/verify-changes.md` |
+
+In opencode these are registered in `opencode.json` and load by name. If your tool cannot
+load skills or agents, read the file directly before you edit.
+
+Read these alongside the skill when they apply:
+
+- `DESIGN.md` — design tokens, typography, component specs. A **spec, not a description of
+  the code**: several items (monospace telemetry, the pulsing health pill, input focus
+  borders, the `scale: 0.98` button press, an animated `Progress` fill) are specified but
+  not built. Do not assume they exist, and do not "fix" them in passing.
+- `be-docs/API.md` — the backend HTTP contract. Authoritative.
+- `be-docs/guide.md` — background only. It recommends Axios and a `useJobPoller` hook; this
+  app deliberately uses `fetch` with `AbortController` and `src/hooks/use-job.ts`. The
+  code, not the guide, is the precedent.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
@@ -21,7 +52,9 @@ npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint and typecheck before declaring any task done. This gate is the `verify-changes`
+agent (`agents/verify-changes.md`); there is no test framework installed, so do not add
+one.
 
 ## Navigation & Routing
 

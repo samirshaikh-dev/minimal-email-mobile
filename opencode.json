@@ -1,0 +1,127 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "skills": {
+    "paths": ["agents/skills"]
+  },
+  "agent": {
+    "expo-feature": {
+      "description": "Use when adding a new screen, route, tab, or self-contained feature to this Expo Router app. Handles route files, layout registration, typed routes, ui.tsx primitives, themed styles, and the useServer data flow.",
+      "mode": "subagent",
+      "color": "accent",
+      "prompt": "{file:agents/expo-feature.md}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "allow",
+          "npx tsc --noEmit": "allow",
+          "npx expo lint": "allow",
+          "npx expo install*": "allow",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git show*": "allow"
+        }
+      }
+    },
+    "api-contract": {
+      "description": "Use when the backend HTTP surface changes, or when a send/tracking feature is added, a response shape is consumed in a screen, or types.ts and api.ts need to be reconciled with be-docs/API.md. Also use for adding or changing a backend endpoint call.",
+      "mode": "subagent",
+      "color": "info",
+      "prompt": "{file:agents/api-contract.md}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "ask",
+          "npx tsc --noEmit": "allow",
+          "npx expo lint": "allow",
+          "git status*": "allow",
+          "git diff*": "allow"
+        }
+      }
+    },
+    "rn-reviewer": {
+      "description": "Read-only review of React Native / React 19 / React Compiler correctness in this repo: hook deps, effect cleanup, stale closures, list virtualization, re-render cost, async races, safe-area and keyboard handling, accessibility, and cross-platform breakage.",
+      "mode": "subagent",
+      "color": "warning",
+      "prompt": "{file:agents/rn-reviewer.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git status*": "allow",
+          "git log*": "allow",
+          "git show*": "allow"
+        },
+        "webfetch": "allow",
+        "websearch": "allow"
+      }
+    },
+    "debug-network": {
+      "description": "Use when the app cannot reach the backend, sends fail, jobs never leave the queue, or emails do not appear: base-URL resolution per platform, emulator host addresses, Redis/BullMQ 503, sync vs queue mode, Mailpit, and ApiError triage.",
+      "mode": "subagent",
+      "color": "error",
+      "prompt": "{file:agents/debug-network.md}",
+      "permission": {
+        "edit": "ask",
+        "bash": {
+          "*": "ask",
+          "curl*": "allow",
+          "npx tsc --noEmit": "allow",
+          "npx expo lint": "allow",
+          "git status*": "allow",
+          "git diff*": "allow"
+        }
+      }
+    },
+    "verify-changes": {
+      "description": "Run the repo's verification gate (npx tsc --noEmit, npx expo lint) and report only real, reproducible failures with file:line. Use before declaring any change complete.",
+      "mode": "subagent",
+      "color": "success",
+      "prompt": "{file:agents/verify-changes.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "npx tsc --noEmit": "allow",
+          "npx expo lint": "allow",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git stash*": "ask"
+        }
+      }
+    },
+    "ui": {
+      "description": "Use when building or extending visual components in this app: compose from src/components/ui.tsx primitives, consume useTheme tokens and the space/radius scales, use flex gap instead of margins, and keep light/dark parity.",
+      "mode": "subagent",
+      "color": "secondary",
+      "prompt": "{file:agents/ui.md}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "ask",
+          "npx tsc --noEmit": "allow",
+          "npx expo lint": "allow",
+          "git status*": "allow",
+          "git diff*": "allow"
+        }
+      }
+    },
+    "ui-ux": {
+      "description": "Read-only UX and accessibility audit of screens: empty/error/loading states, touch targets, contrast in both color schemes, dynamic type, screen-reader labels, destructive-action confirmation, and consistency with the rest of the app.",
+      "mode": "subagent",
+      "color": "primary",
+      "prompt": "{file:agents/ui-ux.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git status*": "allow",
+          "git show*": "allow"
+        }
+      }
+    }
+  }
+}
