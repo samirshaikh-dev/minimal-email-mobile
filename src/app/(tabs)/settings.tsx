@@ -22,7 +22,8 @@ import { clearJobs } from '@/lib/store';
 
 export default function SettingsScreen() {
   const t = useTheme();
-  const { baseUrl, status, latency, checkedAt, refresh } = useServer();
+  const { baseUrl, envBaseUrl, isOverridden, resetBaseUrl, status, latency, checkedAt, refresh } =
+    useServer();
   const [clearedNotice, setClearedNotice] = useState(false);
 
   const handleClearHistory = async () => {
@@ -67,6 +68,16 @@ export default function SettingsScreen() {
           </View>
         </View>
         <KeyValue label="Target Endpoint" value={baseUrl} mono />
+        {isOverridden ? (
+          <Button
+            label={`Use Env Default (${envBaseUrl})`}
+            variant="ghost"
+            onPress={() => {
+              tap();
+              void resetBaseUrl();
+            }}
+          />
+        ) : null}
         {checkedAt !== null ? <KeyValue label="Last Ping" value={timeAgo(checkedAt)} /> : null}
         <Button
           label="Ping Server"

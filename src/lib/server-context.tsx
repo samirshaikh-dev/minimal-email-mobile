@@ -9,7 +9,7 @@ import {
 } from 'react';
 
 import { getHealth } from '@/lib/api';
-import { ENV_BASE_URL, normalizeBaseUrl } from '@/lib/config';
+import { ENV_BASE_URL, normalizeBaseUrl, PROD_API_URL } from '@/lib/config';
 import { readBaseUrl, writeBaseUrl } from '@/lib/store';
 
 export type HealthStatus = 'checking' | 'online' | 'offline';
@@ -59,7 +59,13 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     readBaseUrl()
       .then((stored) => {
-        if (stored && (stored.includes('localhost') || stored.includes('10.0.2.2'))) {
+        if (
+          stored &&
+          (stored === PROD_API_URL ||
+            stored === ENV_BASE_URL ||
+            stored.includes('localhost') ||
+            stored.includes('10.0.2.2'))
+        ) {
           void writeBaseUrl(null);
           setOverride(null);
         } else {
