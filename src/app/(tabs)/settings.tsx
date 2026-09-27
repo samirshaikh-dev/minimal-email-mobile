@@ -92,7 +92,7 @@ export default function SettingsScreen() {
       </Card>
         
       <Card>
-        <Label hint="Permanently wipe local device telemetry">Storage & data</Label>
+        <Label>Storage & data</Label>
         <Button label="Clear Local Job History" variant="danger" onPress={() => void clearJobs()} />
       </Card>
     </Screen>

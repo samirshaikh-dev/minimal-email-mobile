@@ -86,7 +86,7 @@ export default function ComposeScreen() {
       title="Compose"
       subtitle="Full control over subject, message body and resume PDF attachment. Empty fields fall back to server templates.">
       <Card>
-        <Label hint="Paste email addresses separated by commas, spaces, or newlines">Recipients</Label>
+        <Label>Recipients</Label>
         <Input
           multiline
           value={raw}
@@ -109,14 +109,14 @@ export default function ComposeScreen() {
       </Card>
 
       <Card>
-        <Label hint="Leave empty to use server default (data/subject.txt)">Subject line</Label>
+        <Label>Subject line</Label>
         <Input
           value={subject}
           onChangeText={setSubject}
           placeholder="Server default: Application for Full-Stack Developer"
           autoCapitalize="sentences"
         />
-        <Label hint="Leave empty to use server default (data/body.txt)">Message body</Label>
+        <Label>Message body</Label>
         <Input
           multiline
           value={body}
@@ -134,7 +134,7 @@ export default function ComposeScreen() {
             gap: space.md,
           }}>
           <View style={{ flex: 1, gap: 2 }}>
-            <Label hint="Attaches resume PDF found in the server data directory">Attachment</Label>
+            <Label>Attachment</Label>
             <Muted>Attach resume PDF to every email</Muted>
           </View>
           <Switch
@@ -147,9 +147,7 @@ export default function ComposeScreen() {
       </Card>
 
       <Card>
-        <Label hint="Choose asynchronous background worker queue or immediate synchronous delivery">
-          Delivery mode
-        </Label>
+        <Label>Delivery mode</Label>
         <Segmented
           value={mode}
           onChange={setMode}

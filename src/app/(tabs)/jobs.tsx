@@ -103,7 +103,7 @@ export default function JobsScreen() {
           </View>
 
           <Card>
-            <Label hint="Search by job ID to inspect state and delivery outcomes">Inspect specific job</Label>
+            <Label>Inspect specific job</Label>
             <Input
               value={lookup}
               onChangeText={setLookup}

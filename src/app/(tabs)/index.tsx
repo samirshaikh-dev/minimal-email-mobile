@@ -78,7 +78,7 @@ export default function SendScreen() {
       title="Quick Send"
       subtitle="Recipients only — the server automatically fills subject, cover letter and resume PDF from storage.">
       <Card>
-        <Label hint="Paste addresses separated by commas, spaces, or newlines">Recipients</Label>
+        <Label>Recipients</Label>
         <Input
           multiline
           value={raw}
@@ -105,9 +105,7 @@ export default function SendScreen() {
       </Card>
 
       <Card>
-        <Label hint="Queue needs Redis on the server. Sync delivers inline and waits for delivery results.">
-          Delivery mode
-        </Label>
+        <Label>Delivery mode</Label>
         <Segmented
           value={mode}
           onChange={setMode}
@@ -177,7 +175,7 @@ export default function SendScreen() {
       ) : null}
 
       <Card>
-        <Label hint="Managed automatically on the backend server">Server template assets</Label>
+        <Label>Server template assets</Label>
         <KeyValue label="Subject" value="data/subject.txt" mono />
         <KeyValue label="Cover Letter" value="data/body.txt" mono />
         <KeyValue label="Attachment" value="Resume PDF from data folder" mono />
