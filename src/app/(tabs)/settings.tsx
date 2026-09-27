@@ -90,11 +90,7 @@ export default function SettingsScreen() {
           onPress={() => void Linking.openURL('https://samir-portfolio-dev.vercel.app/')}
         />
       </Card>
-        
-      <Card>
-        <Label>Storage & data</Label>
-        <Button label="Clear Local Job History" variant="danger" onPress={() => void clearJobs()} />
-      </Card>
+
     </Screen>
   );
 }
