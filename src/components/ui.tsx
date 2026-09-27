@@ -23,15 +23,15 @@ const MONO_FONT = Platform.select({ ios: 'Menlo', android: 'monospace', default:
 const toneColors = (t: ReturnType<typeof useTheme>, tone: Tone) => {
   switch (tone) {
     case 'success':
-      return { fg: t.success, bg: t.successSoft };
+      return { fg: t.success, bg: t.successSoft, border: '#BBF7D0' };
     case 'danger':
-      return { fg: t.danger, bg: t.dangerSoft };
+      return { fg: t.danger, bg: t.dangerSoft, border: '#FECACA' };
     case 'warning':
-      return { fg: t.warning, bg: t.warningSoft };
+      return { fg: t.warning, bg: t.warningSoft, border: '#FDE68A' };
     case 'accent':
-      return { fg: t.accent, bg: t.accentSoft };
+      return { fg: t.accent, bg: t.accentSoft, border: '#C7D2FE' };
     default:
-      return { fg: t.muted, bg: t.surfaceAlt };
+      return { fg: t.muted, bg: t.surfaceAlt, border: t.border };
   }
 };
 
@@ -46,7 +46,7 @@ export function useScreenContentStyle(extra?: StyleProp<ViewStyle>) {
       alignSelf: 'center' as const,
       padding: space.lg,
       paddingTop: (Platform.OS === 'android' ? insets.top : 0) + space.lg,
-      paddingBottom: space.xxl,
+      paddingBottom: Platform.OS === 'web' ? space.xxl + 48 : space.xxl,
     },
     extra,
   ];
@@ -73,7 +73,7 @@ export function Screen({
       keyboardDismissMode="on-drag"
       contentContainerStyle={content}>
       {title ? (
-        <View style={{ gap: space.xs }}>
+        <View style={{ gap: space.xs, paddingBottom: space.xs }}>
           <Text style={{ color: t.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.6 }}>
             {title}
           </Text>
@@ -99,6 +99,11 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
           borderRadius: radius.lg,
           padding: space.lg,
           gap: space.md,
+          shadowColor: '#0F172A',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 3,
+          elevation: 1,
         },
         style,
       ]}>
@@ -167,14 +172,14 @@ export function Input({
       }}
       style={[
         {
-          backgroundColor: t.bg,
+          backgroundColor: t.surface,
           borderColor: invalid ? t.danger : focused ? t.accent : t.border,
           borderWidth: invalid || focused ? 1.5 : 1,
           borderRadius: radius.md,
           color: t.text,
           fontSize: 15,
           lineHeight: 22,
-          paddingHorizontal: space.md,
+          paddingHorizontal: space.md + 2,
           paddingVertical: space.md,
         },
         multiline ? { minHeight: 104, textAlignVertical: 'top' as const } : null,
@@ -206,7 +211,7 @@ export function Button({
     primary: { bg: t.accent, fg: t.onAccent, border: t.accent },
     secondary: { bg: t.surface, fg: t.text, border: t.border },
     ghost: { bg: 'transparent', fg: t.accent, border: 'transparent' },
-    danger: { bg: t.dangerSoft, fg: t.danger, border: t.dangerSoft },
+    danger: { bg: t.dangerSoft, fg: t.danger, border: '#FECACA' },
   }[variant];
 
   const inactive = disabled || loading;
@@ -231,8 +236,25 @@ export function Button({
           justifyContent: 'center',
           flexDirection: 'row',
           gap: space.sm,
-          opacity: inactive ? 0.55 : pressed ? 0.85 : 1,
+          opacity: inactive ? 0.55 : pressed ? 0.88 : 1,
           transform: [{ scale: pressed && !inactive ? 0.98 : 1 }],
+          ...(variant === 'primary' && !inactive
+            ? {
+                shadowColor: t.accent,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.22,
+                shadowRadius: 4,
+                elevation: 2,
+              }
+            : variant === 'secondary'
+              ? {
+                  shadowColor: '#0F172A',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.03,
+                  shadowRadius: 2,
+                  elevation: 1,
+                }
+              : {}),
         },
         style,
       ]}>
@@ -260,6 +282,8 @@ export function Segmented<T extends string>({
         borderRadius: radius.md,
         padding: 3,
         gap: 3,
+        borderWidth: 1,
+        borderColor: t.border,
       }}>
       {options.map((option) => {
         const active = option.value === value;
@@ -274,9 +298,18 @@ export function Segmented<T extends string>({
               paddingVertical: space.sm + 2,
               borderRadius: radius.sm,
               alignItems: 'center',
-              backgroundColor: active ? t.bg : 'transparent',
+              backgroundColor: active ? t.surface : 'transparent',
               borderWidth: 1,
               borderColor: active ? t.border : 'transparent',
+              ...(active
+                ? {
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 2,
+                    elevation: 1,
+                  }
+                : {}),
             }}>
             <Text
               style={{
@@ -295,14 +328,16 @@ export function Segmented<T extends string>({
 
 export function Badge({ label, tone = 'muted' }: { label: string; tone?: Tone }) {
   const t = useTheme();
-  const { fg, bg } = toneColors(t, tone);
+  const { fg, bg, border } = toneColors(t, tone);
   return (
     <View
       style={{
         backgroundColor: bg,
+        borderColor: border,
+        borderWidth: 1,
         borderRadius: radius.pill,
-        paddingHorizontal: space.md,
-        paddingVertical: 4,
+        paddingHorizontal: space.md - 2,
+        paddingVertical: 3,
         alignSelf: 'flex-start',
       }}>
       <Text style={{ color: fg, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 }}>
@@ -322,9 +357,19 @@ export function Notice({
   children?: ReactNode;
 }) {
   const t = useTheme();
-  const { fg, bg } = toneColors(t, tone);
+  const { fg, bg, border } = toneColors(t, tone);
   return (
-    <View style={{ backgroundColor: bg, borderRadius: radius.md, padding: space.md, gap: 2 }}>
+    <View
+      style={{
+        backgroundColor: bg,
+        borderColor: border,
+        borderWidth: 1,
+        borderLeftWidth: 3,
+        borderLeftColor: fg,
+        borderRadius: radius.md,
+        padding: space.md,
+        gap: 2,
+      }}>
       {title ? <Text style={{ color: fg, fontSize: 13, fontWeight: '600' }}>{title}</Text> : null}
       {children ? <Text style={{ color: fg, fontSize: 13, lineHeight: 18 }}>{children}</Text> : null}
     </View>
@@ -345,7 +390,7 @@ export function KeyValue({
   const t = useTheme();
   const { fg } = toneColors(t, tone ?? 'muted');
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.md }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.md }}>
       <Text style={{ color: t.muted, fontSize: 14 }}>{label}</Text>
       <Text
         style={[
@@ -353,6 +398,57 @@ export function KeyValue({
           mono ? { fontFamily: MONO_FONT, fontSize: 13, fontWeight: '500' } : null,
         ]}>
         {value}
+      </Text>
+    </View>
+  );
+}
+
+/** StatBox: Crisp, high-signal KPI metric tile for counts (Total, Sent, Failed). */
+export function StatBox({
+  label,
+  value,
+  tone = 'muted',
+}: {
+  label: string;
+  value: string | number;
+  tone?: Tone;
+}) {
+  const t = useTheme();
+  const { fg, bg, border } = toneColors(t, tone);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: bg,
+        borderColor: border,
+        borderWidth: 1,
+        borderRadius: radius.md,
+        paddingVertical: space.md - 2,
+        paddingHorizontal: space.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+      }}>
+      <Text
+        style={{
+          color: fg,
+          fontSize: 20,
+          fontWeight: '700',
+          fontFamily: MONO_FONT,
+          letterSpacing: -0.5,
+        }}>
+        {value}
+      </Text>
+      <Text
+        style={{
+          color: tone === 'muted' ? t.muted : fg,
+          fontSize: 10,
+          fontWeight: '700',
+          letterSpacing: 0.6,
+          textTransform: 'uppercase',
+        }}>
+        {label}
       </Text>
     </View>
   );
@@ -398,7 +494,7 @@ export function Progress({ value }: { value: number }) {
   const t = useTheme();
   const percent = Math.max(0, Math.min(100, value > 0 && value <= 1 ? value * 100 : value));
   return (
-    <View style={{ height: 6, borderRadius: radius.pill, backgroundColor: t.surfaceAlt }}>
+    <View style={{ height: 6, borderRadius: radius.pill, backgroundColor: t.surfaceAlt, overflow: 'hidden' }}>
       <View
         style={{
           width: `${percent}%`,
@@ -411,14 +507,46 @@ export function Progress({ value }: { value: number }) {
   );
 }
 
-export function Empty({ title, subtitle }: { title: string; subtitle?: string }) {
+export function Empty({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children?: ReactNode;
+}) {
   const t = useTheme();
   return (
-    <View style={{ alignItems: 'center', gap: space.xs, paddingVertical: space.xxl }}>
-      <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{title}</Text>
+    <View style={{ alignItems: 'center', gap: space.sm, paddingVertical: space.xxl, paddingHorizontal: space.lg }}>
+      <View
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: radius.pill,
+          backgroundColor: t.surfaceAlt,
+          borderColor: t.border,
+          borderWidth: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: space.xs,
+        }}>
+        <View
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: radius.pill,
+            backgroundColor: t.faint,
+          }}
+        />
+      </View>
+      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>{title}</Text>
       {subtitle ? (
-        <Text style={{ color: t.muted, fontSize: 13, textAlign: 'center' }}>{subtitle}</Text>
+        <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', maxWidth: 320 }}>
+          {subtitle}
+        </Text>
       ) : null}
+      {children ? <View style={{ marginTop: space.sm }}>{children}</View> : null}
     </View>
   );
 }

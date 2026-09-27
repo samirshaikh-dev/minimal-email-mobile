@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -6,16 +6,15 @@ import { ServerProvider } from '@/lib/server-context';
 
 export default function RootLayout() {
   const t = useTheme();
-  const base = t.dark ? DarkTheme : DefaultTheme;
 
   return (
     <ServerProvider>
       <ThemeProvider
         value={{
-          ...base,
-          dark: t.dark,
+          ...DefaultTheme,
+          dark: false,
           colors: {
-            ...base.colors,
+            ...DefaultTheme.colors,
             primary: t.accent,
             background: t.bg,
             card: t.surface,
@@ -24,7 +23,7 @@ export default function RootLayout() {
             notification: t.danger,
           },
         }}>
-        <StatusBar style="auto" />
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShadowVisible: false,

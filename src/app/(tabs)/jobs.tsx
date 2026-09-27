@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import {
   Badge,
@@ -8,11 +8,11 @@ import {
   Card,
   Empty,
   Input,
-  KeyValue,
   Label,
   Mono,
   Muted,
   Progress,
+  StatBox,
   useScreenContentStyle,
 } from '@/components/ui';
 import { radius, space } from '@/constants/theme';
@@ -88,32 +88,30 @@ export default function JobsScreen() {
       keyExtractor={(job) => job.id}
       contentContainerStyle={content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.faint} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.accent} />
       }
-      ItemSeparatorComponent={() => <View style={{ height: space.sm }} />}
+      ItemSeparatorComponent={() => <View style={{ height: space.md }} />}
       ListHeaderComponent={
         <View style={{ gap: space.lg, marginBottom: space.lg }}>
-          <View style={{ gap: space.xs }}>
+          <View style={{ gap: space.xs, paddingBottom: space.xs }}>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.6 }}>
-              Jobs
+              Jobs & Queue
             </Text>
             <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19 }}>
-              Queue jobs created from this device. Pull to refresh their state.
+              Monitor background queue dispatch runs created on this device. Pull down to refresh.
             </Text>
           </View>
 
           <Card>
-            <Label hint="Any job id known to the backend, including ones sent elsewhere.">
-              Track a job
-            </Label>
+            <Label hint="Search by job ID to inspect state and delivery outcomes">Inspect specific job</Label>
             <Input
               value={lookup}
               onChangeText={setLookup}
-              placeholder="Job id, e.g. 12"
+              placeholder="e.g. 104"
               keyboardType="number-pad"
             />
             <Button
-              label="Open job"
+              label="Open Job Inspector"
               variant="secondary"
               disabled={lookup.trim().length === 0}
               onPress={() => {
@@ -130,8 +128,9 @@ export default function JobsScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                paddingHorizontal: 2,
               }}>
-              <Label>{jobs.length} tracked</Label>
+              <Label>{jobs.length} tracked batches</Label>
               <Pressable
                 hitSlop={8}
                 disabled={finishedIds.length === 0}
@@ -142,7 +141,7 @@ export default function JobsScreen() {
                     fontSize: 13,
                     fontWeight: '600',
                   }}>
-                  Clear completed
+                  Clear completed ({finishedIds.length})
                 </Text>
               </Pressable>
             </View>
@@ -152,10 +151,10 @@ export default function JobsScreen() {
       ListEmptyComponent={
         <View style={{ gap: space.lg }}>
           <Empty
-            title="No tracked jobs"
-            subtitle="Queued batches show up here so you can watch their delivery result."
+            title="No Tracked Jobs"
+            subtitle="Batches enqueued from Quick Send or Compose will be tracked here with live telemetry."
           />
-          <Button label="Send the first batch" onPress={() => router.navigate('/(tabs)')} />
+          <Button label="Dispatch First Batch" onPress={() => router.navigate('/(tabs)')} />
         </View>
       }
       renderItem={({ item }) => {
@@ -163,6 +162,7 @@ export default function JobsScreen() {
         const state = status?.state;
         const result = status?.result;
         const active = state !== undefined && ACTIVE_STATES.has(state);
+        const progressPercent = Math.round((status?.progress ?? 0) * 100);
 
         return (
           <Pressable
@@ -174,30 +174,56 @@ export default function JobsScreen() {
               borderWidth: 1,
               borderRadius: radius.lg,
               padding: space.lg,
+              ...Platform.select({
+                ios: {
+                  shadowColor: '#0F172A',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 3,
+                },
+                android: {
+                  elevation: 1,
+                },
+                web: {
+                  boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04)',
+                },
+              }),
             })}>
             <View
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                <Mono>#{item.id}</Mono>
+                <Mono style={{ fontWeight: '600', fontSize: 14 }}>#{item.id}</Mono>
                 <Muted>{timeAgo(item.createdAt)}</Muted>
               </View>
               <Badge label={state ?? item.mode} tone={jobStateTone(state)} />
             </View>
 
-            {active ? <Progress value={status?.progress ?? 0} /> : null}
-
-            <KeyValue label="Total" value={String(item.total)} mono />
-            {result ? (
-              <>
-                <KeyValue label="Sent" value={String(result.sent)} tone="success" mono />
-                <KeyValue
-                  label="Failed"
-                  value={String(result.failed)}
-                  tone={result.failed > 0 ? 'danger' : undefined}
-                  mono
-                />
-              </>
+            {active ? (
+              <View style={{ gap: space.xs }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Label>Processing</Label>
+                  <Mono style={{ fontSize: 12, color: t.muted }}>{progressPercent}%</Mono>
+                </View>
+                <Progress value={status?.progress ?? 0} />
+              </View>
             ) : null}
+
+            {result ? (
+              <View style={{ flexDirection: 'row', gap: space.sm }}>
+                <StatBox label="Total" value={item.total} />
+                <StatBox label="Sent" value={result.sent} tone="success" />
+                <StatBox
+                  label="Failed"
+                  value={result.failed}
+                  tone={result.failed > 0 ? 'danger' : 'muted'}
+                />
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', gap: space.sm }}>
+                <StatBox label="Recipients" value={item.total} tone="muted" />
+                <StatBox label="Mode" value={item.mode.toUpperCase()} tone="accent" />
+              </View>
+            )}
           </Pressable>
         );
       }}

@@ -2,7 +2,19 @@ import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Input, KeyValue, Label, Muted, Notice, Screen, Segmented } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  KeyValue,
+  Label,
+  Muted,
+  Notice,
+  Screen,
+  Segmented,
+  StatBox,
+} from '@/components/ui';
 import { space } from '@/constants/theme';
 import { ApiError, isQueueReceipt, sendEmails } from '@/lib/api';
 import { notify, tap } from '@/lib/haptics';
@@ -64,9 +76,9 @@ export default function SendScreen() {
   return (
     <Screen
       title="Quick Send"
-      subtitle="Recipients only — the server fills in the subject, cover letter and resume PDF from its data folder.">
+      subtitle="Recipients only — the server automatically fills subject, cover letter and resume PDF from storage.">
       <Card>
-        <Label hint="Comma, space or newline separated">Recipients</Label>
+        <Label hint="Paste addresses separated by commas, spaces, or newlines">Recipients</Label>
         <Input
           multiline
           value={raw}
@@ -85,23 +97,32 @@ export default function SendScreen() {
           />
           {invalid.length > 0 ? <Badge label={`${invalid.length} invalid`} tone="warning" /> : null}
         </View>
-        {invalid.length > 0 ? <Muted>Skipped: {invalid.join(', ')}</Muted> : null}
+        {invalid.length > 0 ? (
+          <Notice tone="warning" title="Skipped Invalid Addresses">
+            {invalid.join(', ')}
+          </Notice>
+        ) : null}
       </Card>
 
       <Card>
-        <Label hint="Queue needs Redis on the server. Sync delivers inline and returns results.">
+        <Label hint="Queue needs Redis on the server. Sync delivers inline and waits for delivery results.">
           Delivery mode
         </Label>
         <Segmented
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'queue', label: 'Queue' },
-            { value: 'sync', label: 'Sync' },
+            { value: 'queue', label: 'Queue (BullMQ)' },
+            { value: 'sync', label: 'Sync (Direct)' },
           ]}
         />
+        <Muted>
+          {mode === 'queue'
+            ? 'Batches are enqueued for background worker delivery. Best for reliable bulk sending.'
+            : 'Delivers immediately through SMTP and reports delivery status synchronously.'}
+        </Muted>
         <Button
-          label={mode === 'queue' ? 'Queue applications' : 'Send now'}
+          label={mode === 'queue' ? 'Queue Applications' : 'Send Batch Now'}
           onPress={onSend}
           loading={busy}
           disabled={valid.length === 0}
@@ -112,11 +133,16 @@ export default function SendScreen() {
 
       {queued ? (
         <Card>
-          <Badge label="Queued" tone="accent" />
-          <KeyValue label="Job" value={`#${queued.jobId}`} mono />
-          <KeyValue label="Recipients" value={String(queued.total)} mono />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Badge label="Queued in BullMQ" tone="accent" />
+            <Muted>Job #{queued.jobId}</Muted>
+          </View>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <StatBox label="Recipients" value={queued.total} tone="accent" />
+            <StatBox label="Status" value="QUEUED" tone="muted" />
+          </View>
           <Button
-            label="Track job"
+            label="Track Job Progress"
             variant="secondary"
             onPress={() => router.push({ pathname: '/job/[id]', params: { id: queued.jobId } })}
           />
@@ -125,28 +151,36 @@ export default function SendScreen() {
 
       {report ? (
         <Card>
-          <Badge label={report.failed > 0 ? 'Partial failure' : 'Delivered'} tone={report.failed > 0 ? 'warning' : 'success'} />
-          <KeyValue label="Total" value={String(report.total)} mono />
-          <KeyValue label="Sent" value={String(report.sent)} tone="success" mono />
-          <KeyValue
-            label="Failed"
-            value={String(report.failed)}
-            tone={report.failed > 0 ? 'danger' : undefined}
-            mono
-          />
-          {report.failures.slice(0, 5).map((failure) => (
-            <Muted key={failure.email}>
-              {failure.email} — {failure.reason}: {failure.error}
-            </Muted>
-          ))}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Badge
+              label={report.failed > 0 ? 'Partial Failure' : 'All Delivered'}
+              tone={report.failed > 0 ? 'warning' : 'success'}
+            />
+            <Muted>Sync Dispatch</Muted>
+          </View>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <StatBox label="Total" value={report.total} />
+            <StatBox label="Sent" value={report.sent} tone="success" />
+            <StatBox label="Failed" value={report.failed} tone={report.failed > 0 ? 'danger' : 'muted'} />
+          </View>
+          {report.failures.length > 0 ? (
+            <View style={{ gap: space.xs }}>
+              <Label>Failures ({report.failures.length})</Label>
+              {report.failures.slice(0, 5).map((failure) => (
+                <Muted key={failure.email}>
+                  {failure.email} — {failure.reason}: {failure.error}
+                </Muted>
+              ))}
+            </View>
+          ) : null}
         </Card>
       ) : null}
 
       <Card>
-        <Label>Attached by the server</Label>
-        <Muted>Subject from data/subject.txt</Muted>
-        <Muted>Body from data/body.txt</Muted>
-        <Muted>Resume PDF from the data folder</Muted>
+        <Label hint="Managed automatically on the backend server">Server template assets</Label>
+        <KeyValue label="Subject" value="data/subject.txt" mono />
+        <KeyValue label="Cover Letter" value="data/body.txt" mono />
+        <KeyValue label="Attachment" value="Resume PDF from data folder" mono />
       </Card>
     </Screen>
   );

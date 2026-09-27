@@ -29,21 +29,30 @@ const PRESETS = [
 
 export default function SettingsScreen() {
   const t = useTheme();
-  const { baseUrl, envBaseUrl, isOverridden, status, latency, checkedAt, refresh, setBaseUrl, resetBaseUrl } =
-    useServer();
+  const {
+    baseUrl,
+    envBaseUrl,
+    isOverridden,
+    status,
+    latency,
+    checkedAt,
+    refresh,
+    setBaseUrl,
+    resetBaseUrl,
+  } = useServer();
   const [draft, setDraft] = useState(baseUrl);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const sourceLabel = isOverridden
-    ? 'Device override'
+    ? 'Custom device override active'
     : ENV_API_URL.trim()
       ? 'From EXPO_PUBLIC_API_URL'
-      : 'Platform default (EXPO_PUBLIC_API_URL is empty)';
+      : 'Default platform fallback';
 
   const onSave = async () => {
     if (!isBaseUrlValid(draft)) {
-      setError('Enter a full URL, for example http://10.0.2.2:4000');
+      setError('Enter a full URL including protocol, e.g. http://10.0.2.2:4000');
       return;
     }
     tap();
@@ -57,7 +66,53 @@ export default function SettingsScreen() {
   return (
     <Screen
       title="Settings"
-      subtitle="The base URL ships in the bundle from EXPO_PUBLIC_API_URL. This screen can override it on the device.">
+      subtitle="Configure backend connectivity, local environment presets, and debugging tools.">
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Label>Worker health</Label>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: t.surfaceAlt,
+                paddingHorizontal: space.sm,
+                paddingVertical: 3,
+                borderRadius: 999,
+              }}>
+              <StatusDot status={status} />
+              <Mono style={{ color: t.text, fontSize: 11, fontWeight: '600' }}>
+                {status === 'online'
+                  ? `ONLINE${latency !== null ? ` · ${formatLatency(latency)}` : ''}`
+                  : status === 'offline'
+                    ? 'OFFLINE'
+                    : 'CHECKING'}
+              </Mono>
+            </View>
+            <Badge
+              label={environmentLabel(baseUrl)}
+              tone={environmentLabel(baseUrl) === 'Production' ? 'accent' : 'muted'}
+            />
+          </View>
+        </View>
+        <KeyValue label="Target Endpoint" value={baseUrl} mono />
+        {checkedAt !== null ? <KeyValue label="Last Ping" value={timeAgo(checkedAt)} /> : null}
+        <Button
+          label="Ping Server"
+          variant="secondary"
+          onPress={() => {
+            tap();
+            void refresh();
+          }}
+        />
+        {status === 'offline' ? (
+          <Notice tone="warning" title="Backend Unreachable">
+            On Android emulators use host 10.0.2.2 instead of localhost. On physical devices use your local Wi-Fi IP address.
+          </Notice>
+        ) : null}
+      </Card>
+
       <Card>
         <Label hint={sourceLabel}>Backend base URL</Label>
         <Input
@@ -74,7 +129,7 @@ export default function SettingsScreen() {
           invalid={error !== null}
         />
         {error ? <Notice tone="danger">{error}</Notice> : null}
-        <Button label="Save and test" onPress={onSave} loading={busy} />
+        <Button label="Save and Reconnect" onPress={onSave} loading={busy} />
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           {PRESETS.map((preset) => (
             <Button
@@ -87,60 +142,28 @@ export default function SettingsScreen() {
           ))}
         </View>
         {isOverridden ? (
-          <Button label="Use env default" variant="ghost" onPress={() => void resetBaseUrl()} />
+          <Button label="Reset to Environment Default" variant="ghost" onPress={() => void resetBaseUrl()} />
         ) : null}
-        <KeyValue label="Env default" value={envBaseUrl} mono />
+        <KeyValue label="Bundled default" value={envBaseUrl} mono />
       </Card>
 
       <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Label>Connection</Label>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <StatusDot status={status} />
-              <Mono style={{ color: t.muted }}>
-                {status === 'online'
-                  ? `ONLINE ${latency !== null ? formatLatency(latency) : ''}`.trim()
-                  : status === 'offline'
-                    ? 'OFFLINE'
-                    : 'CHECKING'}
-              </Mono>
-            </View>
-            <Badge label={environmentLabel(baseUrl)} tone={environmentLabel(baseUrl) === 'Production' ? 'accent' : 'muted'} />
-          </View>
-        </View>
-        <KeyValue label="Endpoint" value={baseUrl} mono />
-        {checkedAt !== null ? <KeyValue label="Checked" value={timeAgo(checkedAt)} /> : null}
+        <Label hint="Local Docker mail catcher — zero emails hit real inboxes">Email preview (Mailpit)</Label>
+        <Muted>
+          All messages sent in local development are trapped by Mailpit for visual inspection.
+        </Muted>
+        <KeyValue label="Mailpit Web UI" value={mailpitUrl(baseUrl)} mono />
         <Button
-          label="Ping server"
-          variant="secondary"
-          onPress={() => {
-            tap();
-            void refresh();
-          }}
-        />
-        {status === 'offline' ? (
-          <Notice tone="warning" title="Unreachable">
-            On an Android emulator the host is 10.0.2.2, not localhost. On a physical device use your LAN IP.
-          </Notice>
-        ) : null}
-      </Card>
-
-      <Card>
-        <Label>Local delivery</Label>
-        <Muted>Docker development routes all mail to Mailpit, so nothing reaches a real inbox.</Muted>
-        <KeyValue label="Mailpit" value={mailpitUrl(baseUrl)} mono />
-        <Button
-          label="Open Mailpit"
+          label="Open Mailpit in Browser"
           variant="secondary"
           onPress={() => void Linking.openURL(mailpitUrl(baseUrl))}
         />
       </Card>
 
       <Card>
-        <Label>Local data</Label>
-        <Muted>Clears the tracked job list stored on this device.</Muted>
-        <Button label="Clear job history" variant="danger" onPress={() => void clearJobs()} />
+        <Label hint="Permanently wipe local device telemetry">Storage & data</Label>
+        <Muted>Clears the tracked BullMQ job history stored on this device in AsyncStorage.</Muted>
+        <Button label="Clear Local Job History" variant="danger" onPress={() => void clearJobs()} />
       </Card>
     </Screen>
   );

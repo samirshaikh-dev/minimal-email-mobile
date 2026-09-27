@@ -2,7 +2,18 @@ import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { Switch, View } from 'react-native';
 
-import { Badge, Button, Card, Input, KeyValue, Label, Muted, Notice, Screen, Segmented } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Label,
+  Muted,
+  Notice,
+  Screen,
+  Segmented,
+  StatBox,
+} from '@/components/ui';
 import { space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError, isQueueReceipt, sendEmails } from '@/lib/api';
@@ -73,9 +84,9 @@ export default function ComposeScreen() {
   return (
     <Screen
       title="Compose"
-      subtitle="Full control over subject, body and the resume attachment. Leave fields empty to fall back to the server templates.">
+      subtitle="Full control over subject, message body and resume PDF attachment. Empty fields fall back to server templates.">
       <Card>
-        <Label>Recipients</Label>
+        <Label hint="Paste email addresses separated by commas, spaces, or newlines">Recipients</Label>
         <Input
           multiline
           value={raw}
@@ -90,24 +101,31 @@ export default function ComposeScreen() {
           <Badge label={`${valid.length} valid`} tone={valid.length > 0 ? 'success' : 'muted'} />
           {invalid.length > 0 ? <Badge label={`${invalid.length} invalid`} tone="warning" /> : null}
         </View>
-        {invalid.length > 0 ? <Muted>Skipped: {invalid.join(', ')}</Muted> : null}
+        {invalid.length > 0 ? (
+          <Notice tone="warning" title="Skipped Invalid Addresses">
+            {invalid.join(', ')}
+          </Notice>
+        ) : null}
       </Card>
 
       <Card>
-        <Label hint="Optional">Subject</Label>
+        <Label hint="Leave empty to use server default (data/subject.txt)">Subject line</Label>
         <Input
           value={subject}
           onChangeText={setSubject}
-          placeholder="Server default from data/subject.txt"
+          placeholder="Server default: Application for Full-Stack Developer"
           autoCapitalize="sentences"
         />
-        <Label hint="Optional">Message</Label>
+        <Label hint="Leave empty to use server default (data/body.txt)">Message body</Label>
         <Input
           multiline
           value={body}
           onChangeText={setBody}
-          placeholder="Write the email body. Line breaks become &lt;br/&gt;."
+          placeholder="Write your custom email content. Newlines will be formatted automatically."
         />
+      </Card>
+
+      <Card>
         <View
           style={{
             flexDirection: 'row',
@@ -116,32 +134,37 @@ export default function ComposeScreen() {
             gap: space.md,
           }}>
           <View style={{ flex: 1, gap: 2 }}>
-            <Muted>Attach resume PDF</Muted>
-            <Label hint="Any PDF in the server data folder is attached when the server has no explicit entry.">
-              Server attachment
-            </Label>
+            <Label hint="Attaches resume PDF found in the server data directory">Attachment</Label>
+            <Muted>Attach resume PDF to every email</Muted>
           </View>
           <Switch
             value={attachPdf}
             onValueChange={setAttachPdf}
             trackColor={{ false: t.surfaceAlt, true: t.accent }}
-            thumbColor={t.bg}
+            thumbColor={t.onAccent}
           />
         </View>
       </Card>
 
       <Card>
-        <Label>Delivery mode</Label>
+        <Label hint="Choose asynchronous background worker queue or immediate synchronous delivery">
+          Delivery mode
+        </Label>
         <Segmented
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'queue', label: 'Queue' },
-            { value: 'sync', label: 'Sync' },
+            { value: 'queue', label: 'Queue (BullMQ)' },
+            { value: 'sync', label: 'Sync (Direct)' },
           ]}
         />
+        <Muted>
+          {mode === 'queue'
+            ? 'Enqueues batch to Redis. Recommended for robust, fault-tolerant delivery.'
+            : 'Sends immediately in this request and returns live delivery diagnostics.'}
+        </Muted>
         <Button
-          label={mode === 'queue' ? 'Enqueue batch' : 'Send immediately'}
+          label={mode === 'queue' ? 'Enqueue Campaign' : 'Send Campaign Now'}
           onPress={onSend}
           loading={busy}
           disabled={valid.length === 0}
@@ -152,11 +175,16 @@ export default function ComposeScreen() {
 
       {queued ? (
         <Card>
-          <Badge label="Queued" tone="accent" />
-          <KeyValue label="Job" value={`#${queued.jobId}`} mono />
-          <KeyValue label="Recipients" value={String(queued.total)} mono />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Badge label="Queued in BullMQ" tone="accent" />
+            <Muted>Job #{queued.jobId}</Muted>
+          </View>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <StatBox label="Recipients" value={queued.total} tone="accent" />
+            <StatBox label="Status" value="QUEUED" tone="muted" />
+          </View>
           <Button
-            label="Track job"
+            label="Track Job Progress"
             variant="secondary"
             onPress={() => router.push({ pathname: '/job/[id]', params: { id: queued.jobId } })}
           />
@@ -165,23 +193,28 @@ export default function ComposeScreen() {
 
       {report ? (
         <Card>
-          <Badge
-            label={report.failed > 0 ? 'Partial failure' : 'Delivered'}
-            tone={report.failed > 0 ? 'warning' : 'success'}
-          />
-          <KeyValue label="Total" value={String(report.total)} mono />
-          <KeyValue label="Sent" value={String(report.sent)} tone="success" mono />
-          <KeyValue
-            label="Failed"
-            value={String(report.failed)}
-            tone={report.failed > 0 ? 'danger' : undefined}
-            mono
-          />
-          {report.failures.slice(0, 5).map((failure) => (
-            <Muted key={failure.email}>
-              {failure.email} — {failure.reason}: {failure.error}
-            </Muted>
-          ))}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Badge
+              label={report.failed > 0 ? 'Partial Failure' : 'All Delivered'}
+              tone={report.failed > 0 ? 'warning' : 'success'}
+            />
+            <Muted>Sync Dispatch</Muted>
+          </View>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <StatBox label="Total" value={report.total} />
+            <StatBox label="Sent" value={report.sent} tone="success" />
+            <StatBox label="Failed" value={report.failed} tone={report.failed > 0 ? 'danger' : 'muted'} />
+          </View>
+          {report.failures.length > 0 ? (
+            <View style={{ gap: space.xs }}>
+              <Label>Failures ({report.failures.length})</Label>
+              {report.failures.slice(0, 5).map((failure) => (
+                <Muted key={failure.email}>
+                  {failure.email} — {failure.reason}: {failure.error}
+                </Muted>
+              ))}
+            </View>
+          ) : null}
         </Card>
       ) : null}
     </Screen>

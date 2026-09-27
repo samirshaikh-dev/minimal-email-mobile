@@ -20,49 +20,28 @@
 
 ## 2. Design Tokens & Foundations
 
-### 2.1 Color Palette
+### 2.1 Color Palette (Light Mode Only)
 
-The color system uses deep neutral zinc tones paired with an electric indigo accent, adhering to strict WCAG 2.1 AA contrast requirements.
+The application uses an exclusive, high-contrast Light Mode palette inspired by modern SaaS applications (Linear, Resend, Stripe). Dark mode has been intentionally removed for a consistent, clean, high-signal administrative aesthetic.
 
-#### Light Mode (Clean SaaS Slate)
 | Token | Hex | Role / Usage |
 | :--- | :--- | :--- |
-| `bg` | `#FFFFFF` | Canvas background |
-| `surface` | `#FAFAFA` | Cards, input fields, containers |
-| `surfaceAlt` | `#F4F4F5` | Segmented control track, pill backgrounds |
-| `border` | `#E4E4E7` | 1px hairline borders, card outlines, separators |
-| `text` | `#18181B` | Primary headings, body copy, active items |
-| `muted` | `#52525B` | Secondary copy, metadata, descriptive labels |
-| `faint` | `#A1A1AA` | Placeholder text, subtle captions, disabled icons |
-| `accent` | `#4F46E5` | Primary brand actions, active toggles, focus rings |
+| `bg` | `#F8FAFC` | Clean slate canvas background |
+| `surface` | `#FFFFFF` | Elevated white card containers, inputs |
+| `surfaceAlt` | `#F1F5F9` | Segmented control track, pill backgrounds, inset wells |
+| `border` | `#E2E8F0` | Crisp 1px hairline borders, card outlines, separators |
+| `text` | `#0F172A` | Deep slate primary text, high readability |
+| `muted` | `#475569` | Secondary copy, metadata, descriptive labels |
+| `faint` | `#94A3B8` | Placeholder text, subtle captions, disabled indicators |
+| `accent` | `#4F46E5` | Electric indigo primary brand actions, active toggles |
 | `accentSoft` | `#EEF2FF` | Active badge backgrounds, selected row tints |
-| `onAccent` | `#FFFFFF` | Text/icons on solid accent buttons |
-| `success` | `#15803D` | Delivered status, online indicators, valid counts |
+| `onAccent` | `#FFFFFF` | Text on solid accent buttons |
+| `success` | `#16A34A` | Delivered status, online indicators, valid counts |
 | `successSoft`| `#F0FDF4` | Delivered badge background, health notice tint |
-| `warning` | `#B45309` | Queued status, invalid email notices |
+| `warning` | `#D97706` | Queued status, invalid email notices |
 | `warningSoft`| `#FFFBEB` | Warning badge background |
-| `danger` | `#B91C1C` | Failed status, network offline, destructive actions |
+| `danger` | `#DC2626` | Failed status, network offline, destructive actions |
 | `dangerSoft` | `#FEF2F2` | Error banner background, failure badge tint |
-
-#### Dark Mode (Linear / Vercel Deep Zinc)
-| Token | Hex | Role / Usage |
-| :--- | :--- | :--- |
-| `bg` | `#09090B` | Deep zinc background |
-| `surface` | `#111113` | Elevated card surfaces, inputs |
-| `surfaceAlt` | `#1C1C1F` | Segmented track, interactive hover/press states |
-| `border` | `#27272A` | Subtle 1px borders, separators |
-| `text` | `#FAFAFA` | High-contrast readable foreground text |
-| `muted` | `#A1A1AA` | Secondary body text, property keys |
-| `faint` | `#71717A` | Inactive icons, subtle hints, placeholders |
-| `accent` | `#818CF8` | Electric indigo for dark surfaces |
-| `accentSoft` | `#1E1B4B` | Dark indigo tint for active badges |
-| `onAccent` | `#0B0B0F` | High-contrast text on bright accent buttons |
-| `success` | `#4ADE80` | Emerald green for success states & worker health |
-| `successSoft`| `#052E16` | Dark emerald badge background |
-| `warning` | `#FBBF24` | Amber for warnings & retryable states |
-| `warningSoft`| `#422006` | Dark amber badge background |
-| `danger` | `#F87171` | Vibrant coral red for errors & failed jobs |
-| `dangerSoft` | `#450A0A` | Dark red badge & notice background |
 
 ---
 
@@ -249,6 +228,6 @@ To achieve the tactile "native SaaS" feel, every gesture maps to deliberate feed
 When writing or modifying UI components in the codebase:
 - [ ] **Tokens over Ad-hoc Values:** Always import `space`, `radius`, and `useTheme()` from `@/constants/theme` and `@/hooks/use-theme`. Do not hardcode arbitrary hex colors.
 - [ ] **Maximum Content Width:** Ensure all screen views wrap inside `Screen` or apply `useScreenContentStyle` to constrain width to `MAX_CONTENT_WIDTH` (`640px`).
-- [ ] **Dark & Light Parity:** Verify visual hierarchy in both light (`#FFFFFF`) and dark (`#09090B`) themes.
+- [ ] **Light-Only Aesthetics:** Verify visual contrast and crisp hierarchy in Light theme (`#F8FAFC` canvas, `#FFFFFF` surface).
 - [ ] **Accessibility:** Maintain touch target minimums of `44x44pt` for all interactive buttons and inputs.
 - [ ] **Haptics:** Call `tap()` or `notify()` from `@/lib/haptics` on meaningful user actions.
