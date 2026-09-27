@@ -1,72 +1,33 @@
-import { useState } from 'react';
 import { Linking, View } from 'react-native';
+
 
 import {
   Badge,
   Button,
   Card,
-  Input,
   KeyValue,
   Label,
   Mono,
-  Muted,
   Notice,
   Screen,
   StatusDot,
 } from '@/components/ui';
 import { space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { ENV_API_URL, environmentLabel, isBaseUrlValid, mailpitUrl } from '@/lib/config';
+import { environmentLabel } from '@/lib/config';
 import { formatLatency, timeAgo } from '@/lib/format';
-import { notify, tap } from '@/lib/haptics';
+import { tap } from '@/lib/haptics';
 import { useServer } from '@/lib/server-context';
 import { clearJobs } from '@/lib/store';
 
-const PRESETS = [
-  { label: 'iOS simulator', url: 'http://localhost:4000' },
-  { label: 'Android emulator', url: 'http://10.0.2.2:4000' },
-];
-
 export default function SettingsScreen() {
   const t = useTheme();
-  const {
-    baseUrl,
-    envBaseUrl,
-    isOverridden,
-    status,
-    latency,
-    checkedAt,
-    refresh,
-    setBaseUrl,
-    resetBaseUrl,
-  } = useServer();
-  const [draft, setDraft] = useState(baseUrl);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const sourceLabel = isOverridden
-    ? 'Custom device override active'
-    : ENV_API_URL.trim()
-      ? 'From EXPO_PUBLIC_API_URL'
-      : 'Default platform fallback';
-
-  const onSave = async () => {
-    if (!isBaseUrlValid(draft)) {
-      setError('Enter a full URL including protocol, e.g. http://10.0.2.2:4000');
-      return;
-    }
-    tap();
-    setBusy(true);
-    setError(null);
-    await setBaseUrl(draft);
-    setBusy(false);
-    notify(true);
-  };
+  const { baseUrl, status, latency, checkedAt, refresh } = useServer();
 
   return (
     <Screen
       title="Settings"
-      subtitle="Configure backend connectivity, local environment presets, and debugging tools.">
+      subtitle="Worker diagnostics, server connection health, and developer information.">
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Label>Worker health</Label>
@@ -108,61 +69,30 @@ export default function SettingsScreen() {
         />
         {status === 'offline' ? (
           <Notice tone="warning" title="Backend Unreachable">
-            On Android emulators use host 10.0.2.2 instead of localhost. On physical devices use your local Wi-Fi IP address.
+            The target backend did not respond. Check that the service is running and the URL is correct.
           </Notice>
         ) : null}
       </Card>
 
       <Card>
-        <Label hint={sourceLabel}>Backend base URL</Label>
-        <Input
-          value={draft}
-          onChangeText={(value) => {
-            setDraft(value);
-            setError(null);
-          }}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          placeholder="http://localhost:4000"
-          onSubmitEditing={onSave}
-          invalid={error !== null}
-        />
-        {error ? <Notice tone="danger">{error}</Notice> : null}
-        <Button label="Save and Reconnect" onPress={onSave} loading={busy} />
-        <View style={{ flexDirection: 'row', gap: space.sm }}>
-          {PRESETS.map((preset) => (
-            <Button
-              key={preset.url}
-              label={preset.label}
-              variant="secondary"
-              style={{ flex: 1, paddingVertical: space.sm }}
-              onPress={() => setDraft(preset.url)}
-            />
-          ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ gap: 2 }}>
+            <Label >Developer info</Label>
+          </View>
+          <Badge label="Samir Shaikh" tone="accent" />
         </View>
-        {isOverridden ? (
-          <Button label="Reset to Environment Default" variant="ghost" onPress={() => void resetBaseUrl()} />
-        ) : null}
-        <KeyValue label="Bundled default" value={envBaseUrl} mono />
-      </Card>
-
-      <Card>
-        <Label hint="Local Docker mail catcher — zero emails hit real inboxes">Email preview (Mailpit)</Label>
-        <Muted>
-          All messages sent in local development are trapped by Mailpit for visual inspection.
-        </Muted>
-        <KeyValue label="Mailpit Web UI" value={mailpitUrl(baseUrl)} mono />
+        <KeyValue label="Portfolio" value="samir-portfolio-dev.vercel.app" mono />
+        <KeyValue label="Phone" value="8320927182" mono />
+        <KeyValue label="Email" value="shaikh.samir.work@gmail.com" mono />
         <Button
-          label="Open Mailpit in Browser"
+          label="Open Portfolio"
           variant="secondary"
-          onPress={() => void Linking.openURL(mailpitUrl(baseUrl))}
+          onPress={() => void Linking.openURL('https://samir-portfolio-dev.vercel.app/')}
         />
       </Card>
-
+        
       <Card>
         <Label hint="Permanently wipe local device telemetry">Storage & data</Label>
-        <Muted>Clears the tracked BullMQ job history stored on this device in AsyncStorage.</Muted>
         <Button label="Clear Local Job History" variant="danger" onPress={() => void clearJobs()} />
       </Card>
     </Screen>
