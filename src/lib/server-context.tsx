@@ -58,7 +58,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     readBaseUrl()
-      .then(setOverride)
+      .then((stored) => {
+        if (stored && (stored.includes('localhost') || stored.includes('10.0.2.2'))) {
+          void writeBaseUrl(null);
+          setOverride(null);
+        } else {
+          setOverride(stored);
+        }
+      })
       .finally(() => setRestored(true));
   }, []);
 

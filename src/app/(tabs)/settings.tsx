@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { Linking, View } from 'react-native';
-
 
 import {
   Badge,
@@ -16,13 +16,22 @@ import { space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { environmentLabel } from '@/lib/config';
 import { formatLatency, timeAgo } from '@/lib/format';
-import { tap } from '@/lib/haptics';
+import { notify, tap } from '@/lib/haptics';
 import { useServer } from '@/lib/server-context';
 import { clearJobs } from '@/lib/store';
 
 export default function SettingsScreen() {
   const t = useTheme();
   const { baseUrl, status, latency, checkedAt, refresh } = useServer();
+  const [clearedNotice, setClearedNotice] = useState(false);
+
+  const handleClearHistory = async () => {
+    tap();
+    await clearJobs();
+    notify(true);
+    setClearedNotice(true);
+    setTimeout(() => setClearedNotice(false), 3000);
+  };
 
   return (
     <Screen
@@ -76,9 +85,7 @@ export default function SettingsScreen() {
 
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ gap: 2 }}>
-            <Label >Developer info</Label>
-          </View>
+          <Label>Developer info</Label>
           <Badge label="Samir Shaikh" tone="accent" />
         </View>
         <KeyValue label="Portfolio" value="samir-portfolio-dev.vercel.app" mono />

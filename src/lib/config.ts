@@ -1,14 +1,8 @@
-import { Platform } from 'react-native';
+export const PROD_API_URL = 'https://nodemailer-email-sender-d7cj.onrender.com';
 
-export const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+export const ENV_API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
 
-/** Used when EXPO_PUBLIC_API_URL is empty: the Android emulator cannot reach the host's localhost. */
-export const PLATFORM_API_URL = Platform.select({
-  android: 'http://10.0.2.2:4000',
-  default: 'http://localhost:4000',
-});
-
-export const ENV_BASE_URL = ENV_API_URL.trim() || PLATFORM_API_URL;
+export const ENV_BASE_URL = ENV_API_URL || PROD_API_URL;
 
 export function normalizeBaseUrl(value: string) {
   const trimmed = value.trim().replace(/\/+$/, '');
